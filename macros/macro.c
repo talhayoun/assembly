@@ -27,7 +27,7 @@ int hasExtraCharactersAfterValue(char *value)
     {
         if (hasSpace && !isspace(value[i]))
         {
-            printf("ERROR: Found extra characters for (%s)\n", value);
+            printf("ERROR | Found extra characters for (%s)\n", value);
             return TRUE;
         }
 
@@ -65,10 +65,9 @@ char *validateMacroNameAndSaveIt(char *macro, dataObject data)
 int addNewMacro(FILE *fptr, char *fileLine, char *name, node **head)
 {
     char *content;
-    /** Reads next line after macro declaration*/
     fileLine = readLineFromFile(fptr, fileLine);
 
-    /** As long as line doesnt equal endmacr, loop lines*/
+    /** As long as line doesnt equal endmacr, loop file lines*/
     while (strstr(fileLine, ENDMACR) == NULL)
     {
         content = allocateMemoryForChar(strlen(fileLine));

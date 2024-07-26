@@ -17,6 +17,7 @@ void executeFirstProcess(node *macros, dataObject data, char *fileName, dataImag
     do
     {
         readLineFromFile(fptr, fileLine);
+
         if (!validateFileLineLength(fileLine) || isLineAComment(fileLine, TRUE) || isEmptyLine(fileLine))
         {
             printf("File line %d\n", *IC);

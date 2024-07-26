@@ -50,9 +50,17 @@ int main(int argc, char *argv[])
 
     while (i < argc)
     {
+        dataImg = NULL;
+        symbolT = NULL;
+        dataCode = NULL;
+        IC = 0;
+        DC = 0;
+        error = FALSE;
         asFileName = concatString(argv[i], AS_EXTENSION); /** Copies argument file name and appends .as to it */
         if (asFileName == NULL)
             continue;
+
+        printf("Current file being parsed %s\n", asFileName);
 
         amFileName = concatString(argv[i], AM_EXTENSION); /**Copying argument file then adding .am extension */
         if (amFileName == NULL)
@@ -70,7 +78,7 @@ int main(int argc, char *argv[])
             continue;
         }
         printf("Scanning for macros....\n");
-        macros = scanForMacro(asFilePtr, data, &error); /** Looks for macros  */
+        macros = scanForMacro(asFilePtr, data, &error);
 
         printf("Initiating pre process....\n");
         if (!error && initiatePreProcess(macros, asFilePtr, amFileName))
@@ -78,15 +86,16 @@ int main(int argc, char *argv[])
             printf("Initiating first process....\n");
             executeFirstProcess(macros, data, amFileName, &dataImg, &symbolT, &IC, &DC, &dataCode, &error);
 
-            /*printDataImage(&dataImg, DC);*/
+            /*printDataImage(&dataImg, DC);
             printSymbolTable(&symbolT);
+            */
 
             if (!error)
             {
                 printf("Initiating second process....\n");
                 executeSecondProcess(&symbolT, &dataCode, IC, DC, argv[i]);
             }
-            printCode(&dataCode, IC);
+            /*printCode(&dataCode, IC)*/
         }
 
         printf("Calling free nodes\n");

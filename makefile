@@ -17,11 +17,14 @@ macro.o: node.o ./headers/linked-list.h ./headers/util.h ./headers/data.h ./head
 	gcc -c -ansi -Wall -pedantic ./macros/macro.c -o macro.o
 
 pre-process.o: ./headers/macro.h
-	gcc -c -ansi -Wall -pedantic ./macros/pre-process.c -o pre-process.o
+	gcc -c -ansi -Wall -pedantic ./assembler/pre-process.c -o pre-process.o
 
 node.o: ./headers/linked-list.h
 	gcc -c -ansi -Wall -pedantic ./linked-list/node.c -o node.o
 
 util.o:
 	gcc -c -ansi -Wall -pedantic ./utils/util.c -o util.o
+
+clean:
+	rm -r *.o *.am *.obj *.ent *.ext
 	
