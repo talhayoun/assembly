@@ -16,7 +16,7 @@ node *createNode(char *content, char *name)
 
     newNode->name = malloc(sizeof(char) * strlen(name));
     strcpy(newNode->name, name);
-    newNode->content = malloc(sizeof(char) * strlen(content));
+    newNode->content = allocateMemoryForChar(strlen(content));
     strcpy(newNode->content, content);
     newNode->next = NULL;
 
@@ -64,10 +64,21 @@ void setNextNode(node **head, char *name, char *content)
 {
     node *newNode = createNode(content, name);
     node *current = findNodeIfExists(head, name);
-
+    node *temp = *head;
     if (current == NULL)
     {
-        *head = newNode;
+        if (*head == NULL)
+        {
+            *head = newNode;
+            return;
+        }
+
+        while (temp->next != NULL)
+        {
+            temp = temp->next;
+        }
+
+        temp->next = newNode;
         return;
     }
 
@@ -172,10 +183,7 @@ symbolTable *createNewLabelSymbol(char *label, int line, int isExtern, int isEnt
     current->is_entry = FALSE;
     current->is_extern = FALSE;
     (current)->name = allocateMemoryForChar(strlen(label));
-    if (current->name == NULL)
-    {
-        return NULL;
-    }
+
     strcpy((current)->name, label);
 
     (current)->line = line;
@@ -229,11 +237,12 @@ void freeDataCode(binaryCode **head, int length)
     int i;
     for (i = 0; i < length; i++)
     {
-        if (head[i] != NULL)
+        if ((*head + i) != NULL)
         {
-            free(head[i]);
+            free((*head + i));
         }
     }
+    printf("Freeeing code\n");
 }
 
 void freeDataImage(dataImage **head, int length)
@@ -241,12 +250,18 @@ void freeDataImage(dataImage **head, int length)
     int i;
     for (i = 0; i < length; i++)
     {
-        if (head[i] != NULL)
+
+        if ((*head + i) != NULL)
         {
-            free(head[i]->label);
-            free(head[i]);
+            if ((*head + i)->label != NULL)
+            {
+
+                free((*head + i)->label);
+            }
+            free((*head + i));
         }
     }
+    printf("Freeeing data image\n");
 }
 void printDataImage(dataImage **head, int length)
 {
@@ -291,7 +306,7 @@ int saveCode(binaryCode **dataCode, unsigned short code, int *IC, char *label, i
         }
         else
         {
-            (*dataCode + *IC)->label = (char *)malloc(sizeof(char) * strlen(label) + 1);
+            (*dataCode + *IC)->label = allocateMemoryForChar(strlen(label));
             strcpy((*dataCode + *IC)->label, label);
         }
 
@@ -309,7 +324,7 @@ void printCode(binaryCode **code, int length)
 
     for (i = 0; i < length; i++)
     {
-        printf("Line %d\t %u %s\n", i + 100, current[i].num, current[i].label);
+        printf("Line %d\t %u %s IC:%d\n", i + 100, current[i].num, current[i].label, i);
         printBinary(current[i].num);
     }
 }

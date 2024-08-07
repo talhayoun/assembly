@@ -29,8 +29,9 @@ int initiatePreProcess(node *macros, FILE *fptr, char *fileName)
 void replaceMacrosWithContent(FILE *file, node *copyMacro)
 {
     char *line;
-
-    while (copyMacro != NULL)
+    char *name = allocateMemoryForChar(strlen(copyMacro->name));
+    strcpy(name, copyMacro->name);
+    while (copyMacro != NULL && !strcmp(name, copyMacro->name))
     {
         /** Copies macro content to file */
         line = strcat(copyMacro->content, "\n");
@@ -45,22 +46,29 @@ int appendFileLinesWithoutMacroDeclaration(node *macros, FILE *fptr, FILE *amFil
     char *token, *copiedLine = allocateMemoryForChar(READ_LINE_LENGTH);
     int foundMacro = 0;
 
-    if (fileLine == NULL || copiedLine == NULL)
-    {
-        return FALSE;
-    }
-
     rewind(fptr);
 
     do
     {
         readLineFromFile(fptr, fileLine);
 
-        /** Copies file line to a temp variable, so wont effect original line*/
+        if (isEmptyLine(fileLine, FALSE))
+        {
+            continue;
+        }
+
         strcpy(copiedLine, fileLine);
+
+        fileLine = trimSpaces(fileLine);
+
+        if (isLineAComment(fileLine, FALSE))
+        {
+            continue;
+        }
 
         /** Splits file line by spaces*/
         token = strtok(copiedLine, " ");
+
         if (!strcmp(token, MACR))
         {
             /** If token equals macr ( macro declaration), we should skip this line and not add it to the file*/
@@ -89,7 +97,7 @@ int appendFileLinesWithoutMacroDeclaration(node *macros, FILE *fptr, FILE *amFil
                 fileLine = strcat(fileLine, "\n");
             }
 
-            fprintf(amFile, fileLine);
+            fputs(fileLine, amFile);
         }
 
     } while (!feof(fptr));
@@ -100,18 +108,40 @@ int findMacroByNameAndReplace(char *macroName, node **macros, FILE *file)
 {
     node *macro;
     int found = 0;
-    while (macroName != NULL)
+    if (macroName != NULL)
     {
-        /** Finds macro by name */
+        while (TRUE)
+        {
+            macro = findMacroByName(macros, macroName);
+            if (macro != NULL)
+            {
+                if (!strcmp(macroName, macro->name))
+                {
+                    replaceMacrosWithContent(file, macro);
+                    found = 1;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            break;
+        }
+    }
+
+    /*while (macroName != NULL)
+    {
+
         macro = findMacroByName(macros, macroName);
+
         if (macro != NULL)
         {
-            /** If found macro, replace macro declartion with its content */
+
             replaceMacrosWithContent(file, macro);
             found = 1;
         }
         macroName = strtok(NULL, " ");
-    }
+    }*/
 
     return found;
 }

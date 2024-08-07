@@ -109,14 +109,14 @@ int saveCommandTwoOperands(int addressType[], char **operands, symbolTable **sym
 
 /**
  * Code an instruction with one operand
- * @param addressTypes - An array of address types
+ * @param addressTypes -  address type
  * @param operands - An array of operands
  * @param symbolT - A pointer to symbol table
  * @param registers - An array of registers
  * @param dataCode - A pointer to data code
  * @param IC - Instruction counter
  */
-int saveCommandOneOperand(int addressType[], char **operands, symbolTable **symbolT, char **registers, binaryCode **code, int *IC);
+int saveCommandOneOperand(int addressType, char **operands, symbolTable **symbolT, char **registers, binaryCode **code, int *IC);
 
 /**
  * Receives label in token parameter and saves label in symbol table
@@ -164,6 +164,9 @@ int areBothOperandsRegistersAddressType(int addressOne, int addressTwo);
  * @param src - Address type
  * @param target - Address type
  * @param command - Command
+ * @param length - whether src and target exist or only one of them
  * @returns boolean
  */
-int validateCommandOperands(int src, int target, cmd command);
+int validateCommandOperands(int src, int target, cmd command, int length);
+
+void populateDataImageCode(dataImage **dataImg, binaryCode **dataCode, symbolTable **symbolT, int *IC, int *DC);

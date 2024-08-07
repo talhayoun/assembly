@@ -75,6 +75,7 @@ int main(int argc, char *argv[])
         {
             free(asFileName);
             free(amFileName);
+            i++;
             continue;
         }
         printf("Scanning for macros....\n");
@@ -86,16 +87,11 @@ int main(int argc, char *argv[])
             printf("Initiating first process....\n");
             executeFirstProcess(macros, data, amFileName, &dataImg, &symbolT, &IC, &DC, &dataCode, &error);
 
-            /*printDataImage(&dataImg, DC);
-            printSymbolTable(&symbolT);
-            */
-
             if (!error)
             {
                 printf("Initiating second process....\n");
                 executeSecondProcess(&symbolT, &dataCode, IC, DC, argv[i]);
             }
-            /*printCode(&dataCode, IC)*/
         }
 
         printf("Calling free nodes\n");

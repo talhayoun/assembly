@@ -59,9 +59,10 @@ char *findByValue(char *value, char **arr, int length);
 /**
  * Checks if this string doesn't contain any alpha or digit
  * @param str - A string
+ * @param showError - Boolean - whether to print error or not
  * @return TRUE if empty
  */
-int isEmptyLine(char *str);
+int isEmptyLine(char *str, int showError);
 
 /**
  * Checks if string starts with ; which is a comment

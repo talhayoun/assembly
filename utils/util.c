@@ -41,6 +41,7 @@ void removeBlankLine(char *str)
 int findCommand(char *value, cmd *commands)
 {
     int i;
+
     /** Loops commands and finds out if macro name equals one of the commands name*/
     for (i = 0; i < COMMANDS_AMOUNT; i++)
     {
@@ -81,7 +82,7 @@ char *findByValue(char *value, char **arr, int length)
     return FALSE;
 }
 
-int isEmptyLine(char *str)
+int isEmptyLine(char *str, int showError)
 {
     while (*str)
     {
@@ -91,7 +92,11 @@ int isEmptyLine(char *str)
         }
         str++;
     }
-    printf("ERROR | Line is empty line | ");
+
+    if (showError)
+    {
+        printf("ERROR | Line is empty line | ");
+    }
     return TRUE;
 }
 
@@ -134,11 +139,6 @@ int validateSingleCommaBetweenOperands(char *value)
 int validateLabel(char *label, dataObject data, node *macros)
 {
     char *copyLabel = allocateMemoryForChar(strlen(label));
-
-    if (copyLabel == NULL)
-    {
-        return FALSE;
-    }
 
     strcpy(copyLabel, label);
 
@@ -329,6 +329,7 @@ int *extractNumbersSeperatedByCommas(char *numbers, int *amount)
             return NULL;
         }
         nums[i] = num;
+
         i++;
         token = strtok(NULL, ",");
     }
@@ -385,8 +386,6 @@ int validateParentheses(char *str)
 char *concatString(char *str, char *extension)
 {
     char *newFile = allocateMemoryForChar(strlen(str) + strlen(extension));
-    if (newFile == NULL)
-        return NULL;
 
     strcpy(newFile, str);
     strcat(newFile, extension);
@@ -412,7 +411,7 @@ char *allocateMemoryForChar(int length)
     if (newChar == NULL)
     {
         printf("ERROR: Failed to allocate memory location LENGTH - (%d) \n", sizeof(char) * length + 1);
-        return NULL;
+        exit(1);
     };
 
     return newChar;

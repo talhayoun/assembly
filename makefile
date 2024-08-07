@@ -26,5 +26,5 @@ util.o:
 	gcc -c -ansi -Wall -pedantic ./utils/util.c -o util.o
 
 clean:
-	rm -r *.o *.am *.obj *.ent *.ext
+	rm -r *.o *.am *.ob *.ent *.ext
 	

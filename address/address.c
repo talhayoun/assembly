@@ -8,11 +8,6 @@ int findAddressNumber(char *operand, dataObject dataObj, node *macros)
 {
     char *copyOperand = allocateMemoryForChar(strlen(operand));
 
-    if (copyOperand == NULL)
-    {
-        return -1;
-    }
-
     strcpy(copyOperand, operand);
 
     if (*copyOperand == '#')

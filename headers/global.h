@@ -41,7 +41,7 @@
 
 #define EXTERN_EXTENSION ".ext"
 #define ENTRY_EXTENSION ".ent"
-#define OBJ_EXTENSION ".obj"
+#define OBJ_EXTENSION ".ob"
 #define AM_EXTENSION ".am"
 #define AS_EXTENSION ".as"
 #endif

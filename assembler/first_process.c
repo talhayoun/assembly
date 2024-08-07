@@ -18,10 +18,9 @@ void executeFirstProcess(node *macros, dataObject data, char *fileName, dataImag
     {
         readLineFromFile(fptr, fileLine);
 
-        if (!validateFileLineLength(fileLine) || isLineAComment(fileLine, TRUE) || isEmptyLine(fileLine))
+        if (!validateFileLineLength(fileLine) || isLineAComment(fileLine, TRUE) || isEmptyLine(fileLine, TRUE))
         {
             printf("File line %d\n", *IC);
-            (*IC)++;
             continue;
         }
 
@@ -43,13 +42,41 @@ void executeFirstProcess(node *macros, dataObject data, char *fileName, dataImag
 
     } while (!feof(fptr));
 
+    populateDataImageCode(dataImg, dataCode, symbolT, IC, DC);
+
     free(fileLine);
     fclose(fptr);
 }
 
+void populateDataImageCode(dataImage **dataImg, binaryCode **dataCode, symbolTable **symbolT, int *IC, int *DC)
+{
+    int i;
+    symbolTable *temp;
+    char *label = allocateMemoryForChar(MAXIMUM_LINE_LENGTH);
+
+    for (i = 0; i < *DC; i++)
+    {
+        if ((*dataImg + i)->label != NULL && strcmp((*dataImg + i)->label, label))
+        {
+            strcpy(label, (*dataImg + i)->label);
+            temp = findLabelByName(symbolT, (*dataImg + i)->label);
+            temp->line = *IC;
+        }
+
+        if ((*dataImg + i)->is_data)
+        {
+            saveCode(dataCode, (*dataImg + i)->value, IC, NULL, FALSE);
+        }
+        else
+        {
+            saveCode(dataCode, (*dataImg + i)->value, IC, (*dataImg + i)->label, FALSE);
+        }
+    }
+    free(label);
+}
+
 int validateFileLineLength(char *fileLine)
 {
-    /** Checks file line doesn't exceed maximum length*/
     if (strlen(fileLine) >= MAXIMUM_LINE_LENGTH)
     {
         printf("ERROR | Exceeded maximum file length | ");
@@ -64,10 +91,9 @@ int parseDirective(char *line, dataObject dataObj, node *macros, int *DC, int *I
     char *copiedLine = allocateMemoryForChar(strlen(line));
     char *substr;
     int label = 0;
-    if (token == NULL || copiedLine == NULL)
-        return FALSE;
 
     strcpy(copiedLine, line);
+
     label = extractLabelIfExists(line, &token, dataObj, macros);
 
     if ((substr = strstr(copiedLine, DATA)))
@@ -80,14 +106,11 @@ int parseDirective(char *line, dataObject dataObj, node *macros, int *DC, int *I
             printf("ERROR |  Invalid numbers in .data | File line %d\n", *IC);
             return FALSE;
         }
-        else
+        if (label)
         {
-            if (label)
-            {
-                setLabelInSymbolTable(symbolT, token, *IC, FALSE, FALSE);
-            };
-            setNumbersInDataImage(dataImg, dataCode, substr, DC, IC, label == 1 ? token : NULL);
-        }
+            setLabelInSymbolTable(symbolT, token, *IC, FALSE, FALSE);
+        };
+        setNumbersInDataImage(dataImg, dataCode, substr, DC, IC, label == TRUE ? token : NULL);
     }
     else if ((substr = strstr(copiedLine, STRING)))
     {
@@ -103,7 +126,7 @@ int parseDirective(char *line, dataObject dataObj, node *macros, int *DC, int *I
         {
             setLabelInSymbolTable(symbolT, token, *IC, FALSE, FALSE);
         }
-        setStringInDataImage(dataImg, dataCode, substr, DC, IC, label == 1 ? token : NULL);
+        setStringInDataImage(dataImg, dataCode, substr, DC, IC, label == TRUE ? token : NULL);
     }
     else if ((substr = strstr(copiedLine, ENTRY)))
     {
@@ -140,21 +163,16 @@ void setNumbersInDataImage(dataImage **dataImg, binaryCode **dataCode, char *num
         if (label)
         {
             (*dataImg + *DC)->label = allocateMemoryForChar(strlen(label));
-            if ((*dataImg + *DC)->label == NULL)
-            {
-                return;
-            }
             strcpy((*dataImg + *DC)->label, label);
         }
         else
         {
             (*dataImg + *DC)->label = NULL;
         }
+
         (*dataImg + *DC)->value = nums[i];
         (*dataImg + *DC)->is_data = TRUE;
         (*DC)++;
-
-        saveCode(dataCode, nums[i], IC, NULL, FALSE);
     }
 }
 
@@ -174,10 +192,6 @@ void setStringInDataImage(dataImage **dataImg, binaryCode **dataCode, char *str,
         if (label)
         {
             (*dataImg + *DC)->label = allocateMemoryForChar(strlen(label));
-            if ((*dataImg + *DC)->label == NULL)
-            {
-                return;
-            }
 
             strcpy((*dataImg + *DC)->label, label);
         }
@@ -187,9 +201,8 @@ void setStringInDataImage(dataImage **dataImg, binaryCode **dataCode, char *str,
 
         (*dataImg + *DC)->is_data = FALSE;
 
-        saveCode(dataCode, *str == '0' ? 0 : *str, IC, label, FALSE);
-
         str++;
+
         (*DC)++;
     }
 }
@@ -198,11 +211,6 @@ char *extractCommand(char *str)
 {
     char *command = allocateMemoryForChar(MAXIMUM_COMMAND_LENGTH);
     int i = 0;
-
-    if (command == NULL)
-    {
-        return NULL;
-    }
 
     while (*str)
     {
@@ -222,29 +230,23 @@ char *extractCommand(char *str)
 int parseCommand(char *line, dataObject dataObj, node *macros, symbolTable **symbolT, int *IC, binaryCode **dataCode)
 {
     char *token = allocateMemoryForChar(strlen(line));
-    int foundLabel = FALSE;
     char *copyLine = allocateMemoryForChar(strlen(line));
+    int foundLabel = FALSE;
     char *command;
     char **operands;
     int i = 0, operandsLength, value, commandIndex, opcode, addressType[2];
 
-    if (copyLine == NULL || token == NULL)
-    {
-        return FALSE;
-    }
-
     strcpy(copyLine, line);
-    foundLabel = extractLabelIfExists(line, &token, dataObj, macros);
 
+    addressType[0] = -1;
+    addressType[1] = -1;
+
+    foundLabel = extractLabelIfExists(line, &token, dataObj, macros);
+    copyLine = trimSpaces(copyLine);
     if (foundLabel)
     {
-        if (!saveLabel(IC, &copyLine, line, token, symbolT))
-        {
-            free(copyLine);
-            return FALSE;
-        };
+        saveLabel(IC, &copyLine, line, token, symbolT);
     }
-
     copyLine = trimSpaces(copyLine);
 
     command = extractCommand(copyLine);
@@ -256,9 +258,8 @@ int parseCommand(char *line, dataObject dataObj, node *macros, symbolTable **sym
     if (commandIndex == -1)
     {
         printf("ERROR | Invalid command | File line %d\n", *IC);
-        (*IC)++;
         free(copyLine);
-        return FALSE;
+        return TRUE;
     }
 
     if (!validateStringSeperatedByCommas(copyLine, FALSE))
@@ -268,7 +269,6 @@ int parseCommand(char *line, dataObject dataObj, node *macros, symbolTable **sym
     }
 
     operands = extractOperandsSeperatedByCommas(copyLine, &operandsLength);
-
     if (dataObj.commands[commandIndex].arguments_amount != operandsLength)
     {
         printf("ERROR | Too many operands (%d) provided for (%s) command | File line %d\n", operandsLength, command, *IC);
@@ -282,7 +282,7 @@ int parseCommand(char *line, dataObject dataObj, node *macros, symbolTable **sym
         addressType[i] = findAddressNumber(operands[i], dataObj, macros);
     }
 
-    if (!validateCommandOperands(addressType[0], addressType[1], dataObj.commands[commandIndex]))
+    if (!validateCommandOperands(addressType[0], addressType[1], dataObj.commands[commandIndex], operandsLength))
     {
         printf("ERROR | Command %s doesn't accept these address type | File Line %d\n", dataObj.commands[commandIndex].name, *IC);
         free(copyLine);
@@ -315,10 +315,8 @@ int parseCommand(char *line, dataObject dataObj, node *macros, symbolTable **sym
             free(operands);
             return FALSE;
         };
-
-        if (!saveCommandOneOperand(addressType, operands, symbolT, dataObj.registers, dataCode, IC))
+        if (!saveCommandOneOperand(addressType[0], operands, symbolT, dataObj.registers, dataCode, IC))
         {
-
             free(copyLine);
             free(operands);
             return FALSE;
@@ -338,7 +336,6 @@ int parseCommand(char *line, dataObject dataObj, node *macros, symbolTable **sym
         };
     }
 
-    free(copyLine);
     free(operands);
     return TRUE;
 }
@@ -387,6 +384,7 @@ int saveCommandTwoOperands(int addressType[], char **operands, symbolTable **sym
         };
 
         label = addressType[1] == 1 ? operands[1] : NULL;
+
         shouldRecode = result[1] == 0 ? TRUE : FALSE;
         if (!saveCode(dataCode, result[1], IC, label, shouldRecode))
         {
@@ -397,13 +395,13 @@ int saveCommandTwoOperands(int addressType[], char **operands, symbolTable **sym
     return TRUE;
 }
 
-int saveCommandOneOperand(int addressType[], char **operands, symbolTable **symbolT, char **registers, binaryCode **dataCode, int *IC)
+int saveCommandOneOperand(int addressType, char **operands, symbolTable **symbolT, char **registers, binaryCode **dataCode, int *IC)
 {
     unsigned short result;
-    char *label = addressType[0] == 1 ? operands[0] : NULL;
+    char *label = addressType == 1 ? operands[0] : NULL;
     int shouldRecode = FALSE;
 
-    result = codeByAddress(addressType[0], operands[0], symbolT, registers, REGISTER_BIT_THREE);
+    result = codeByAddress(addressType, operands[0], symbolT, registers, REGISTER_BIT_THREE);
 
     if (!result)
     {
@@ -411,13 +409,13 @@ int saveCommandOneOperand(int addressType[], char **operands, symbolTable **symb
     }
 
     saveCode(dataCode, result, IC, label, shouldRecode);
+
     return TRUE;
 }
 
 int extractLabelIfExists(char *line, char **str, dataObject dataObj, node *macros)
 {
     int label = FALSE;
-
     if (strstr(line, LABEL_SYMBOL_SPACE))
     {
         *str = strtok(line, " ");
@@ -439,6 +437,16 @@ int saveLabel(int *IC, char **lineWithoutLabel, char *line, char *token, symbolT
     if (labelExist)
     {
         printf("ERROR | Label already exists | File line %d\n", *IC);
+        token = strcat(token, ":");
+
+        line = strstr(line, token);
+
+        *lineWithoutLabel += strlen(line);
+
+        if (labelExist->is_entry)
+        {
+            labelExist->line = *IC;
+        }
         return FALSE;
     }
 
@@ -448,6 +456,7 @@ int saveLabel(int *IC, char **lineWithoutLabel, char *line, char *token, symbolT
     line = strstr(line, token);
 
     *lineWithoutLabel += strlen(line);
+
     return TRUE;
 }
 
@@ -475,11 +484,17 @@ int areBothOperandsRegistersAddressType(int addressOne, int addressTwo)
     return FALSE;
 }
 
-int validateCommandOperands(int src, int target, cmd command)
+int validateCommandOperands(int src, int target, cmd command, int operandsLength)
 {
     int i;
     int src_allowed = FALSE;
     int target_allowed = FALSE;
+
+    if (operandsLength == 1)
+    {
+        target = src;
+        src = -1;
+    };
 
     if (command.src_length == 0)
     {
@@ -501,7 +516,7 @@ int validateCommandOperands(int src, int target, cmd command)
 
     for (i = 0; i < command.target_length; i++)
     {
-        if (command.target_allowed_operands[i] == src)
+        if (command.target_allowed_operands[i] == target)
         {
             target_allowed = TRUE;
         }

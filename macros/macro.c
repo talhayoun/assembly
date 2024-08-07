@@ -48,11 +48,6 @@ char *validateMacroNameAndSaveIt(char *macro, dataObject data)
     {
         name = allocateMemoryForChar(strlen(macro));
 
-        if (name == NULL)
-        {
-            return NULL;
-        }
-
         if (!hasExtraCharactersAfterValue(macro) && !isMacroNameIlegal(name, data.commands, data.instructions))
         {
             strcpy(name, macro);
@@ -71,10 +66,6 @@ int addNewMacro(FILE *fptr, char *fileLine, char *name, node **head)
     while (strstr(fileLine, ENDMACR) == NULL)
     {
         content = allocateMemoryForChar(strlen(fileLine));
-        if (content == NULL)
-        {
-            return FALSE;
-        }
 
         strcpy(content, fileLine);
         setNextNode(head, name, content); /** Saves macro content */
@@ -95,17 +86,10 @@ node *scanForMacro(FILE *fptr, dataObject data, int *error)
     char *token, *name;
     node *head = NULL;
 
-    if (fileLine == NULL)
-    {
-        *error = TRUE;
-        return NULL;
-    }
-
     do
     {
         fileLine = readLineFromFile(fptr, fileLine);
-
-        if (isLineAComment(fileLine, FALSE))
+        if (isLineAComment(fileLine, FALSE) || isEmptyLine(fileLine, FALSE))
         {
             continue;
         }
@@ -117,7 +101,6 @@ node *scanForMacro(FILE *fptr, dataObject data, int *error)
         {
             /** Validates macro name is legal and copies it to new memory allocation */
             name = validateMacroNameAndSaveIt(token, data);
-
             if (name == NULL || !addNewMacro(fptr, fileLine, name, &head))
             {
                 free(head);
